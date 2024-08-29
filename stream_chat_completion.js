@@ -15,8 +15,10 @@ async function main() {
 
   const models = [
     "lmstudio-community/gemma-2-2b-it-GGUF/gemma-2-2b-it-Q4_K_M.gguf",
-    "lmstudio-community/gemma-2-2b-it-GGUF/gemma-2-2b-it-Q8_0.gguf",
-    "lmstudio-community/gemma-2-2b-it-GGUF/gemma-2-2b-it-IQ3_M.gguf"
+    //"lmstudio-community/gemma-2-2b-it-GGUF/gemma-2-2b-it-Q8_0.gguf",
+    "lmstudio-community/Phi-3.5-mini-instruct-GGUF/Phi-3.5-mini-instruct-Q4_K_M.gguf",
+    "lmstudio-community/Meta-Llama-3.1-8B-Instruct-GGUF/Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf"
+    // "lmstudio-community/gemma-2-2b-it-GGUF/gemma-2-2b-it-IQ3_M.gguf"
   ];
 
   const article001 = fs.readFileSync('article001.txt', 'utf-8');
@@ -28,12 +30,21 @@ async function main() {
     "Respond only with the answer. What is the capital of the state of Washington in the US?",
     "Respond only with the answer. What language is 'ti voglio bene'?",
     "Classify the following text with positive, negative, neutral sentiment: 'The restaurant was too noisy'",
-    `Summarise in one paragraph the following article '${article001}'`
+    `Summarise in one paragraph the following article '${article001}'`,
+    `For the article below, only respond with three hashtags that represent the content '${article001}'`
   ];
+
+  const modelResults = {};
 
   for (const model of models) {
     const modelShortname = extractModelShortname(model);
     if (verbose) console.log(chalk.bgBlue.white(`\n========== Running model: ${modelShortname} ==========`));
+
+    modelResults[modelShortname] = {
+      totalTimeToFirstToken: 0,
+      totalAverageTokensPerSecond: 0,
+      promptCount: 0
+    };
 
     for (const prompt of userPrompts) {
       if (verbose) console.log(chalk.bgGreen.black(`\n----- Prompt: "${prompt.slice(0, 100)}${prompt.length > 100 ? '...' : ''}" -----`));
@@ -48,14 +59,31 @@ async function main() {
           verbose
         );
 
-        console.log(chalk.blue(`Model: ${modelShortname}`));
-        console.log(chalk.green(`Prompt: "${prompt.slice(0, 100)}${prompt.length > 100 ? '...' : ''}"`));
-        console.log(chalk.magenta(`Time to first token: ${result.timeToFirstToken} ms`));
-        console.log(chalk.cyan(`Average tokens/s: ${result.averageTokensPerSecond.toFixed(2)}`));
+        modelResults[modelShortname].totalTimeToFirstToken += result.timeToFirstToken;
+        modelResults[modelShortname].totalAverageTokensPerSecond += result.averageTokensPerSecond;
+        modelResults[modelShortname].promptCount++;
+
+        if (verbose) {
+          console.log(chalk.blue(`Model: ${modelShortname}`));
+          console.log(chalk.green(`Prompt: "${prompt.slice(0, 100)}${prompt.length > 100 ? '...' : ''}"`));
+          console.log(chalk.magenta(`Time to first token: ${result.timeToFirstToken} ms`));
+          console.log(chalk.cyan(`Average tokens/s: ${result.averageTokensPerSecond.toFixed(2)}`));
+        }
       } catch (error) {
         if (verbose) console.error(chalk.red('Error:'), error);
       }
     }
+  }
+
+  console.log(chalk.bgYellow.black('\n========== Final Results =========='));
+  for (const [modelShortname, results] of Object.entries(modelResults)) {
+    const avgTimeToFirstToken = results.totalTimeToFirstToken / results.promptCount;
+    const avgTokensPerSecond = results.totalAverageTokensPerSecond / results.promptCount;
+
+    console.log(chalk.blue(`Model: ${modelShortname}`));
+    console.log(chalk.magenta(`Average Time to First Token: ${avgTimeToFirstToken.toFixed(2)} ms`));
+    console.log(chalk.cyan(`Average Tokens/s: ${avgTokensPerSecond.toFixed(2)}`));
+    console.log('');
   }
 }
 
