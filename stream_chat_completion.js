@@ -14,17 +14,23 @@ async function main() {
   const verbose = options.verbose || false;
 
   const models = [
-    "lmstudio-community/gemma-2-2b-it-GGUF/gemma-2-2b-it-Q4_K_M.gguf",
-    //"lmstudio-community/gemma-2-2b-it-GGUF/gemma-2-2b-it-Q8_0.gguf",
-    "lmstudio-community/Phi-3.5-mini-instruct-GGUF/Phi-3.5-mini-instruct-Q4_K_M.gguf",
-    "lmstudio-community/Meta-Llama-3.1-8B-Instruct-GGUF/Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf"
-    // "lmstudio-community/gemma-2-2b-it-GGUF/gemma-2-2b-it-IQ3_M.gguf"
+    //"lmstudio-community/gemma-2-2b-it-GGUF/gemma-2-2b-it-Q4_K_M.gguf",
+    "lmstudio-community/gemma-2-2b-it-GGUF/gemma-2-2b-it-Q8_0.gguf",
+    //"lmstudio-community/Phi-3.5-mini-instruct-GGUF/Phi-3.5-mini-instruct-Q4_K_M.gguf",
+    //"lmstudio-community/Meta-Llama-3.1-8B-Instruct-GGUF/Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf"
+    //"lmstudio-community/gemma-2-2b-it-GGUF/gemma-2-2b-it-IQ3_M.gguf"
   ];
 
   const article001 = fs.readFileSync('article001.txt', 'utf-8');
 
   const userPrompts = [
+    "List all countries in EU, just the answer, comma separated values.",
+    "Respond only with a JSON mapping where key is countries in EU and values is their capital.",
+    "Write the key takeaways of 'The Missing Cryptoqueen'",
+    "Who is James Hoffman?",
     "What is the capital of France?",
+    "What is the capital of Portugal?",
+    "What is Lisbon the capital of",
     "Respond only with JSON, with a 'name' key. Who is the president of the US?",
     "Respond only with XML. What are the capitals of Europe?",
     "Respond only with the answer. What is the capital of the state of Washington in the US?",
