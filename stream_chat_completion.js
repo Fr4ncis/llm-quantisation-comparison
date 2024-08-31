@@ -2,24 +2,44 @@
 const { program } = require('commander');
 const chalk = require('chalk');
 const fs = require('fs');
-const streamChatCompletion = require('./stream_chat_completion_function');
+const { streamChatCompletionLMStudio, streamChatCompletionOllama } = require('./stream_chat_completion_function');
 const { extractModelShortname } = require('./utils');
 
 async function main() {
   program
     .option('-v, --verbose', 'run in verbose mode')
+    .option('-f, --function <type>', 'chat completion function to use (ollama or lmstudio)', 'lmstudio')
+    .option('--hostname <hostname>', 'hostname for the API server', '127.0.0.1')
+    .option('--port <port>', 'port for the API server', (val) => parseInt(val, 10))
     .parse(process.argv);
 
   const options = program.opts();
   const verbose = options.verbose || false;
+  const chatFunction = options.function.toLowerCase();
+  const hostname = options.hostname;
+  const port = options.port || (chatFunction === 'ollama' ? 11434 : 1234);
 
-  const models = [
-    //"lmstudio-community/gemma-2-2b-it-GGUF/gemma-2-2b-it-Q4_K_M.gguf",
+  if (chatFunction !== 'ollama' && chatFunction !== 'lmstudio') {
+    console.error(chalk.red('Error: Invalid function specified. Use either "ollama" or "lmstudio".'));
+    process.exit(1);
+  }
+
+  const streamChatCompletion = chatFunction === 'ollama' ? streamChatCompletionOllama : streamChatCompletionLMStudio;
+
+  const lmStudioModels = [
     "lmstudio-community/gemma-2-2b-it-GGUF/gemma-2-2b-it-Q8_0.gguf",
+    ///"lmstudio-community/gemma-2-2b-it-GGUF/gemma-2-2b-it-IQ3_M.gguf",
     //"lmstudio-community/Phi-3.5-mini-instruct-GGUF/Phi-3.5-mini-instruct-Q4_K_M.gguf",
     //"lmstudio-community/Meta-Llama-3.1-8B-Instruct-GGUF/Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf"
-    //"lmstudio-community/gemma-2-2b-it-GGUF/gemma-2-2b-it-IQ3_M.gguf"
   ];
+
+  const ollamaModels = [
+    "llama3.1:8b-instruct-q2_K",
+    "llama3.1:8b-instruct-q4_K_M",
+    "llama3.1:8b-instruct-q8_0"
+  ];
+
+  const models = chatFunction === 'ollama' ? ollamaModels : lmStudioModels;
 
   const article001 = fs.readFileSync('article001.txt', 'utf-8');
 
@@ -57,12 +77,11 @@ async function main() {
       try {
         const result = await streamChatCompletion(
           model,
-          [
-            { role: "system", content: "You are a helpful assistant." },
-            { role: "user", content: prompt }
-          ],
+          prompt,
           0.0,
-          verbose
+          verbose,
+          hostname,
+          port
         );
 
         modelResults[modelShortname].totalTimeToFirstToken += result.timeToFirstToken;
