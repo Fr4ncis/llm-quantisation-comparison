@@ -67,7 +67,7 @@ async function pullOllamaModel(model, verbose = false, hostname = 'localhost', p
   });
 }
 
-async function streamChatCompletionOllama(model, prompt, temperature, verbose, hostname = 'localhost', port = 11434) {
+async function streamChatCompletionOllama(model, prompt, temperature = 0.0, max_tokens = -1, verbose, hostname = 'localhost', port = 11434) {
   const options = {
     hostname,
     port,
@@ -81,7 +81,7 @@ async function streamChatCompletionOllama(model, prompt, temperature, verbose, h
   const requestData = {
     model,
     prompt: prompt,
-    options: {temperature: temperature},
+    options: {temperature: temperature, num_predict: max_tokens},
     stream: true
   };
 

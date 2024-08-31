@@ -1,7 +1,7 @@
 const http = require('http');
 const chalk = require('chalk');
 
-async function streamChatCompletionLMStudio(model, prompt, temperature, verbose, hostname = '127.0.0.1', port = 1234) {
+async function streamChatCompletionLMStudio(model, prompt, temperature, max_tokens, verbose, hostname = '127.0.0.1', port = 1234) {
   const options = {
     hostname,
     port,

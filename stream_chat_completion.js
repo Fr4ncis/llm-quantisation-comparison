@@ -92,6 +92,7 @@ async function main() {
           model,
           prompt,
           0.0,
+          600,
           verbose,
           hostname,
           port
