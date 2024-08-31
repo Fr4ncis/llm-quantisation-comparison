@@ -2,15 +2,17 @@
 const { program } = require('commander');
 const chalk = require('chalk');
 const fs = require('fs');
-const { streamChatCompletionLMStudio, streamChatCompletionOllama } = require('./stream_chat_completion_function');
+const streamChatCompletionLMStudio = require('./streamChatCompletionLMStudio.js');
+const { streamChatCompletionOllama, pullOllamaModels } = require('./streamChatCompletionOllama.js');
 const { extractModelShortname } = require('./utils');
 
 async function main() {
   program
     .option('-v, --verbose', 'run in verbose mode')
     .option('-f, --function <type>', 'chat completion function to use (ollama or lmstudio)', 'lmstudio')
-    .option('--hostname <hostname>', 'hostname for the API server', '127.0.0.1')
-    .option('--port <port>', 'port for the API server', (val) => parseInt(val, 10))
+    .option('-h, --hostname <hostname>', 'hostname for the API server', '127.0.0.1')
+    .option('-p, --port <port>', 'port for the API server', (val) => parseInt(val, 10))
+    .option('-m, --models <models>', 'override default models (comma-separated)')
     .parse(process.argv);
 
   const options = program.opts();
@@ -26,20 +28,26 @@ async function main() {
 
   const streamChatCompletion = chatFunction === 'ollama' ? streamChatCompletionOllama : streamChatCompletionLMStudio;
 
-  const lmStudioModels = [
+  const defaultLmStudioModels = [
     "lmstudio-community/gemma-2-2b-it-GGUF/gemma-2-2b-it-Q8_0.gguf",
     ///"lmstudio-community/gemma-2-2b-it-GGUF/gemma-2-2b-it-IQ3_M.gguf",
     //"lmstudio-community/Phi-3.5-mini-instruct-GGUF/Phi-3.5-mini-instruct-Q4_K_M.gguf",
     //"lmstudio-community/Meta-Llama-3.1-8B-Instruct-GGUF/Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf"
   ];
 
-  const ollamaModels = [
-    "llama3.1:8b-instruct-q2_K",
-    "llama3.1:8b-instruct-q4_K_M",
-    "llama3.1:8b-instruct-q8_0"
+  const defaultOllamaModels = [
+    "gemma2:2b-instruct-q2_K",
+    "gemma2:2b-instruct-q4_K_M", 
+    "gemma2:2b-instruct-q6_K",
+    //"gemma2:2b-instruct-fp16",
   ];
 
-  const models = chatFunction === 'ollama' ? ollamaModels : lmStudioModels;
+  let models;
+  if (options.models) {
+    models = options.models.split(',').map(model => model.trim());
+  } else {
+    models = chatFunction === 'ollama' ? defaultOllamaModels : defaultLmStudioModels;
+  }
 
   const article001 = fs.readFileSync('article001.txt', 'utf-8');
 
@@ -61,6 +69,11 @@ async function main() {
   ];
 
   const modelResults = {};
+
+  if (chatFunction === 'ollama') {
+    console.log(chalk.blue('Pulling Ollama models...'));
+    await pullOllamaModels(models);
+  }
 
   for (const model of models) {
     const modelShortname = extractModelShortname(model);
